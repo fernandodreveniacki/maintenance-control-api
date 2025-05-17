@@ -1,0 +1,1008 @@
+{
+	"info": {
+		"_postman_id": "61d3edb0-2a77-4035-a911-ef1437d04060",
+		"name": "Sistema de Controle de Manutenção Industrial",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37890947"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Login bem-sucedido\", function() {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"if (jsonData.data && jsonData.data.token) {\r",
+									"    pm.environment.set(\"TOKEN\", jsonData.data.token);\r",
+									"    console.log(\"✅ Token JWT gerado:\", jsonData.data.token);\r",
+									"} else {\r",
+									"    console.error(\"❌ Erro: Token JWT não encontrado na resposta!\");\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"admin@empresa.com\",\r\n    \"password\": \"123456\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/user/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"user",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Admin\",\r\n  \"email\": \"admin@empresa.com\",\r\n  \"passwordHash\": \"123456\",\r\n  \"role\": 0\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/user/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"user",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ver perfil logado",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/user/profile",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"user",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar usuarios",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/User/list",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"User",
+								"list"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/User/6",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"User",
+								"6"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Alert",
+			"item": [
+				{
+					"name": "Listar alerta",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/alert",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"alert"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar alertas não lidos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/alert/unread",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"alert",
+								"unread"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar alertas por maquina",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/alert/machine/3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"alert",
+								"machine",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar alerta",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/alert/1/read",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"alert",
+								"1",
+								"read"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar alerta por user logado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/alert/mine",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"alert",
+								"mine"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Criar alerta",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"message\": \"Teste\",\r\n  \"machineId\": \"3\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/alert",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"alert"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Machine",
+			"item": [
+				{
+					"name": "Criar máquina",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Compressor Industrial c\",\r\n  \"code\": \"CP-003\",\r\n  \"location\": \"Fábrica B\",\r\n  \"installationDate\": \"2024-05-04T00:00:00\",\r\n  \"status\": 1,\r\n  \"manufacturer\": \"Siemens\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/machine",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"machine"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar máquinas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/machine",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"machine"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar máquinas por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/machine/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"machine",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar máquinas pelo user logado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/Machine/mine",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"Machine",
+								"mine"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Maintenance",
+			"item": [
+				{
+					"name": "Registar Manutenção",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"machineId\": 3,\r\n  \"type\": 1,\r\n  \"performedAt\": \"2024-04-01T10:00:00\",\r\n  \"durationHours\": 2,\r\n  \"description\": \"Troca de óleo\",\r\n  \"rootCause\": \"Desgaste\",\r\n  \"correctiveAction\": \"Substituição completa\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/maintenance",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"maintenance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Manutenção",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/Maintenance",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"Maintenance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Manutenção por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/Maintenance/7",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"Maintenance",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Manutenção",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"machineId\": 3,\r\n  \"type\": 0,\r\n  \"performedAt\": \"2025-05-06T16:15:15.225Z\",\r\n  \"durationHours\": 0,\r\n  \"description\": \"Quebrou\",\r\n  \"rootCause\": \"Desgaste\",\r\n  \"correctiveAction\": \"Joga fora\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/Maintenance/7",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"Maintenance",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Manutenção",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/Maintenance/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"Maintenance",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Manutenção por maquina",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/maintenance/machine/3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"maintenance",
+								"machine",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Manutenção pelo user logado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/Maintenance/mine",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"Maintenance",
+								"mine"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "MaintenancePlan",
+			"item": [
+				{
+					"name": "Criar Plano de Manutenção",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"title\": \"Lubrificação Mensal\",\r\n  \"description\": \"Lubrificar peças móveis do compressor\",\r\n  \"frequencyType\": 1,\r\n  \"frequencyValue\": 30,\r\n  \"isActive\": true\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/maintenanceplan",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"maintenanceplan"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atribuir Plano à Máquina",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"machineId\": 3,\r\n  \"maintenancePlanId\": 4,\r\n  \"nextDueDate\": \"2024-06-04\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/planassignment",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"planassignment"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar planos de manutenção",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/MaintenancePlan",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"MaintenancePlan"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar plano de manutenção ativos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/MaintenancePlan/active",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"MaintenancePlan",
+								"active"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar plano de manutenção por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/MaintenancePlan/4",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"MaintenancePlan",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar plano de manutenção",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"title\": \"string\",\r\n  \"description\": \"string\",\r\n  \"frequencyType\": 0,\r\n  \"frequencyValue\": 0,\r\n  \"isActive\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/MaintenancePlan/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"MaintenancePlan",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar plano de manutenção",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/MaintenancePlan/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"MaintenancePlan",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar planos de manutenção criados pelo user logado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/MaintenancePlan/mine",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"MaintenancePlan",
+								"mine"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PlanAssignment",
+			"item": [
+				{
+					"name": "Listar Atribuição Planos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/planassignment",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"planassignment"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Criar Atribuição de plano",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"machineId\": 3,\r\n  \"maintenancePlanId\": 1,\r\n  \"nextDueDate\": \"2025-05-06T16:04:15.636Z\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/planassignment",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"planassignment"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Atribuição de plano por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/planassignment/2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"planassignment",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Atribuição de plano",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"machineId\": 0,\r\n  \"maintenancePlanId\": 0,\r\n  \"nextDueDate\": \"2025-05-06T16:05:32.954Z\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5065/api/planassignment/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"planassignment",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Atribuição de plano",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/planassignment/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"planassignment",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar atribuição de planos por maquina",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/planassignment/machine/2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"planassignment",
+								"machine",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar atribuição de planos criados pelo user logado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5065/api/planassignment/mine",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5065",
+							"path": [
+								"api",
+								"planassignment",
+								"mine"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{TOKEN}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"pm.test(\"Status Code is 200 or 201\", function() {\r",
+					"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+					"});\r",
+					"\r",
+					"\r",
+					"pm.test(\"Response is JSON\", function() {\r",
+					"    pm.response.to.be.json;\r",
+					"});\r",
+					"\r",
+					"if (pm.request.headers.has(\"Authorization\")) {\r",
+					"    pm.test(\"Authorization Header Exists\", function() {\r",
+					"        pm.expect(pm.request.headers.get(\"Authorization\")).to.include(\"Bearer \");\r",
+					"    });\r",
+					"}\r",
+					"\r",
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "TOKEN",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
