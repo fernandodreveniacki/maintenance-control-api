@@ -70,7 +70,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"name\": \"Admin\",\r\n  \"email\": \"admin@empresa.com\",\r\n  \"passwordHash\": \"123456\",\r\n  \"role\": 0\r\n}\r\n",
+							"raw": "{\r\n    \"name\": \"Novo Usuário\",\r\n    \"email\": \"novo@empresa.com\",\r\n    \"passwordHash\": \"123456\",\r\n    \"role\": 2\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -243,7 +243,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "",
+							"raw": "{\r\n    \"title\": \"Alerta de Manutenção Atualizado\",\r\n    \"message\": \"Verificar o motor - atualização\",\r\n    \"isRead\": true,\r\n    \"assignmentId\": 1\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -295,7 +295,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"message\": \"Teste\",\r\n  \"machineId\": \"3\"\r\n}",
+							"raw": "{\r\n    \"title\": \"Alerta de Manutenção\",\r\n    \"message\": \"Verificar o motor\",\r\n    \"machineId\": 1\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -316,6 +316,28 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -413,6 +435,28 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
 			]
 		},
 		{
@@ -495,7 +539,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"machineId\": 3,\r\n  \"type\": 0,\r\n  \"performedAt\": \"2025-05-06T16:15:15.225Z\",\r\n  \"durationHours\": 0,\r\n  \"description\": \"Quebrou\",\r\n  \"rootCause\": \"Desgaste\",\r\n  \"correctiveAction\": \"Joga fora\"\r\n}",
+							"raw": "{\r\n  \"machineId\": 1,\r\n  \"type\": 0,\r\n\"performedAt\": \"2025-05-18T15:30:00Z\",\r\n  \"durationHours\": 1,\r\n  \"description\": \"Quebrou\",\r\n  \"rootCause\": \"Desgaste\",\r\n  \"correctiveAction\": \"Joga fora\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -503,7 +547,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:5065/api/Maintenance/7",
+							"raw": "http://localhost:5065/api/Maintenance/2",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -512,7 +556,7 @@
 							"path": [
 								"api",
 								"Maintenance",
-								"7"
+								"2"
 							]
 						}
 					},
@@ -714,7 +758,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"title\": \"string\",\r\n  \"description\": \"string\",\r\n  \"frequencyType\": 0,\r\n  \"frequencyValue\": 0,\r\n  \"isActive\": true\r\n}",
+							"raw": "{\r\n    \"title\": \"Plano de Manutenção Anual\",\r\n    \"description\": \"Manutenção preventiva anual\",\r\n    \"frequencyType\": 3,\r\n    \"frequencyValue\": 365, \r\n    \"isActive\": true\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -778,6 +822,28 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -992,6 +1058,7 @@
 					"        pm.expect(pm.request.headers.get(\"Authorization\")).to.include(\"Bearer \");\r",
 					"    });\r",
 					"}\r",
+					"\r",
 					"\r",
 					""
 				]

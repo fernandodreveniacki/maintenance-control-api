@@ -22,94 +22,63 @@ public class MaintenanceController : ControllerBase
         _machineRepository = machineRepository;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    private int ObterIdUsuarioAtual()
     {
-        var list = await _maintenanceRepository.GetAllAsync();
+        return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+    }
 
-        var response = list.Select(m => new CreateMaintenanceResponse
-        {
-            Id = m.Id,
-            MachineName = m.Machine?.Name ?? "N/A",
-            Type = m.Type.ToString(),
-            PerformedAt = m.PerformedAt,
-            DurationHours = m.DurationHours,
-            Description = m.Description,
-            RootCause = m.RootCause,
-            CorrectiveAction = m.CorrectiveAction
-        });
+    [HttpGet]
+    public async Task<IActionResult> ObterTodas()
+    {
+        var manutenções = await _maintenanceRepository.GetAllAsync();
+        var resposta = manutenções.Select(MapearManutencaoParaResposta);
 
         return Ok(new
         {
-            message = "Lista de manutenções carregada com sucesso.",
-            data = response
+            mensagem = "Lista de manutenções carregada com sucesso.",
+            dados = resposta
         });
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> ObterPorId(int id)
     {
-        var item = await _maintenanceRepository.GetByIdAsync(id);
-        if (item == null)
-            return NotFound(new { message = $"Manutenção com ID {id} não foi encontrada." });
+        var userId = ObterIdUsuarioAtual();
+        var manutencao = await _maintenanceRepository.GetByIdAsync(id);
 
-        var response = new CreateMaintenanceResponse
-        {
-            Id = item.Id,
-            MachineName = item.Machine?.Name ?? "N/A",
-            Type = item.Type.ToString(),
-            PerformedAt = item.PerformedAt,
-            DurationHours = item.DurationHours,
-            Description = item.Description,
-            RootCause = item.RootCause,
-            CorrectiveAction = item.CorrectiveAction
-        };
+        if (manutencao == null || manutencao.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Manutenção não encontrada ou acesso negado." });
 
-        return Ok(new
-        {
-            message = "Manutenção encontrada com sucesso.",
-            data = response
-        });
+        return Ok(new { mensagem = "Manutenção carregada com sucesso.", dados = MapearManutencaoParaResposta(manutencao) });
     }
 
     [HttpGet("machine/{machineId}")]
-    public async Task<IActionResult> GetByMachine(int machineId)
+    public async Task<IActionResult> ObterPorMaquina(int machineId)
     {
-        var list = await _maintenanceRepository.GetByMachineIdAsync(machineId);
+        var userId = ObterIdUsuarioAtual();
+        var manutenções = await _maintenanceRepository.GetByMachineIdAsync(machineId);
 
-        var response = list.Select(m => new CreateMaintenanceResponse
-        {
-            Id = m.Id,
-            MachineName = m.Machine?.Name ?? "N/A",
-            Type = m.Type.ToString(),
-            PerformedAt = m.PerformedAt,
-            DurationHours = m.DurationHours,
-            Description = m.Description,
-            RootCause = m.RootCause,
-            CorrectiveAction = m.CorrectiveAction
-        });
+        var resposta = manutenções
+            .Where(m => m.CreatedByUserId == userId)
+            .Select(MapearManutencaoParaResposta);
 
         return Ok(new
         {
-            message = $"Manutenções da máquina {machineId} carregadas com sucesso.",
-            data = response
+            mensagem = $"Manutenções da máquina {machineId} carregadas com sucesso.",
+            dados = resposta
         });
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateMaintenanceRequest dto)
+    public async Task<IActionResult> Criar([FromBody] CreateMaintenanceRequest dto)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized(new { message = "Token inválido ou ID do usuário não encontrado." });
-        }
+        var userId = ObterIdUsuarioAtual();
+        var maquina = await _machineRepository.GetByIdAsync(dto.MachineId);
 
-        var machine = await _machineRepository.GetByIdAsync(dto.MachineId);
-        if (machine == null)
-            return BadRequest(new { message = "Máquina não encontrada." });
+        if (maquina == null)
+            return BadRequest(new { mensagem = "Máquina não encontrada." });
 
-        var maintenance = new Maintenance
+        var manutencao = new Maintenance
         {
             MachineId = dto.MachineId,
             Type = (MaintenanceType)dto.Type,
@@ -118,63 +87,71 @@ public class MaintenanceController : ControllerBase
             Description = dto.Description,
             RootCause = dto.RootCause,
             CorrectiveAction = dto.CorrectiveAction,
-            CreatedByUserId = userId // ESSENCIAL
+            CreatedByUserId = userId
         };
 
-        await _maintenanceRepository.AddAsync(maintenance);
+        await _maintenanceRepository.AddAsync(manutencao);
         await _maintenanceRepository.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetById), new { id = maintenance.Id }, new
-        {
-            message = "Manutenção registrada com sucesso.",
-            data = new { maintenance.Id }
-        });
+        return CreatedAtAction(nameof(ObterPorId), new { id = manutencao.Id },
+        new { mensagem = "Manutenção registrada com sucesso.", dados = new { manutencao.Id } });
     }
 
-
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateMaintenanceRequest updated)
+    public async Task<IActionResult> Atualizar(int id, [FromBody] CreateMaintenanceRequest dto)
     {
-        var existing = await _maintenanceRepository.GetByIdAsync(id);
-        if (existing == null)
-            return NotFound(new { message = $"Manutenção com ID {id} não foi encontrada." });
+        var userId = ObterIdUsuarioAtual();
+        var manutencao = await _maintenanceRepository.GetByIdAsync(id);
 
-        existing.Type = (MaintenanceType)updated.Type;
-        existing.PerformedAt = updated.PerformedAt;
-        existing.DurationHours = (float)updated.DurationHours;
-        existing.RootCause = updated.RootCause;
-        existing.CorrectiveAction = updated.CorrectiveAction;
+        if (manutencao == null || manutencao.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Manutenção não encontrada ou acesso negado." });
 
-        _maintenanceRepository.Update(existing);
+        manutencao.Type = (MaintenanceType)dto.Type;
+        manutencao.PerformedAt = dto.PerformedAt;
+        manutencao.DurationHours = (float)dto.DurationHours;
+        manutencao.Description = dto.Description;
+        manutencao.RootCause = dto.RootCause;
+        manutencao.CorrectiveAction = dto.CorrectiveAction;
+
+        _maintenanceRepository.Update(manutencao);
         await _maintenanceRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Manutenção atualizada com sucesso." });
+        return Ok(new { mensagem = "Manutenção atualizada com sucesso." });
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Excluir(int id)
     {
-        var item = await _maintenanceRepository.GetByIdAsync(id);
-        if (item == null)
-            return NotFound(new { message = $"Manutenção com ID {id} não foi encontrada." });
+        var userId = ObterIdUsuarioAtual();
+        var manutencao = await _maintenanceRepository.GetByIdAsync(id);
 
-        _maintenanceRepository.Delete(item);
+        if (manutencao == null || manutencao.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Manutenção não encontrada ou acesso negado." });
+
+        _maintenanceRepository.Delete(manutencao);
         await _maintenanceRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Manutenção deletada com sucesso." });
+        return Ok(new { mensagem = "Manutenção excluída com sucesso." });
     }
+
     [HttpGet("mine")]
-    public async Task<IActionResult> GetMyMaintenances()
+    public async Task<IActionResult> ObterMinhasManutencoes()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ObterIdUsuarioAtual();
+        var manutenções = await _maintenanceRepository.GetMaintenancesByCreatorAsync(userId);
 
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        var resposta = manutenções.Select(MapearManutencaoParaResposta);
+
+        return Ok(new
         {
-            return Unauthorized(new { message = "Token inválido ou ID do usuário não encontrado." });
-        }
-        var maintenances = await _maintenanceRepository.GetMaintenancesByCreatorAsync(userId);
+            mensagem = "Suas manutenções carregadas com sucesso.",
+            dados = resposta
+        });
+    }
 
-        var response = maintenances.Select(m => new CreateMaintenanceResponse
+    private CreateMaintenanceResponse MapearManutencaoParaResposta(Maintenance m)
+    {
+        return new CreateMaintenanceResponse
         {
             Id = m.Id,
             MachineName = m.Machine?.Name ?? "N/A",
@@ -184,13 +161,6 @@ public class MaintenanceController : ControllerBase
             Description = m.Description,
             RootCause = m.RootCause,
             CorrectiveAction = m.CorrectiveAction
-        });
-
-        return Ok(new
-        {
-            message = "Manutenções registradas por você.",
-            data = response
-        });
+        };
     }
-
 }

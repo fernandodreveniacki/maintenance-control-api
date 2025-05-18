@@ -1,11 +1,41 @@
+# Ignore Bin e Obj (diretório global)
 bin/
 obj/
 
+# Configurações locais do Visual Studio e IDEs
 .vscode/
 .vs/
 .idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
 
-
+# Arquivos de configuração específicos (opcional, se você deseja manter apenas o appsettings.json principal)
 appsettings.Development.json
 appsettings.Local.json
+appsettings.*.local.json
 
+# Ignorar pastas específicas do projeto
+/MaintenanceControlSystem.API/obj/
+/MaintenanceControlSystem.API/bin/
+/MaintenanceControlSystem.API/.vs/
+/MaintenanceControlSystem.API/.vscode/
+/MaintenanceControlSystem.API/*.user
+
+# Arquivos de cache e temporários
+*.tmp
+*.log
+*.log.*
+*.cache
+*.csproj.user
+*.csproj.nuget.dgspec.json
+*.csproj.nuget.g.props
+*.csproj.nuget.g.targets
+
+# Arquivos de build locais do NuGet
+/Packages/
+/*.nupkg
+/*.snupkg
+/project.lock.json
+/project.nuget.cache

@@ -14,7 +14,7 @@ public class CreateMaintenanceRequest
     public DateTime PerformedAt { get; set; }
 
     [Required, Range(0.1, 100)]
-    public double DurationHours { get; set; }
+    public float DurationHours { get; set; }
 
     [Required]
     public string Description { get; set; } = string.Empty;

@@ -20,40 +20,46 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
 
-        // Machine → CreatedByUser
+        // Relacionamento Machine → CreatedByUser
         modelBuilder.Entity<Machine>()
             .HasOne(m => m.CreatedByUser)
             .WithMany()
             .HasForeignKey(m => m.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Maintenance → CreatedByUser
+        // Relacionamento Maintenance → CreatedByUser
         modelBuilder.Entity<Maintenance>()
             .HasOne(m => m.CreatedByUser)
             .WithMany()
             .HasForeignKey(m => m.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // MaintenancePlan → CreatedByUser
+        // Relacionamento MaintenancePlan → CreatedByUser
         modelBuilder.Entity<MaintenancePlan>()
             .HasOne(p => p.CreatedByUser)
             .WithMany()
             .HasForeignKey(p => p.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // MaintenancePlanAssignment → CreatedByUser
+        // Relacionamento MaintenancePlanAssignment → CreatedByUser
         modelBuilder.Entity<MaintenancePlanAssignment>()
             .HasOne(a => a.CreatedByUser)
             .WithMany()
             .HasForeignKey(a => a.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
-        
-        // Alert → CreatedByUser
+
+        // Relacionamento Alert → CreatedByUser
         modelBuilder.Entity<Alert>()
             .HasOne(a => a.CreatedByUser)
             .WithMany()
             .HasForeignKey(a => a.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Relacionamento Alert → Machine
+        modelBuilder.Entity<Alert>()
+            .HasOne(a => a.Machine)
+            .WithMany()
+            .HasForeignKey(a => a.MachineId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

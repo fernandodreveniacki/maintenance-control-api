@@ -26,88 +26,56 @@ public class PlanAssignmentController : ControllerBase
         _planRepository = planRepository;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    private int ObterIdUsuarioAtual()
     {
-        var assignments = await _assignmentRepository.GetAllAsync();
+        return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+    }
 
-        var response = assignments.Select(a => new CreatePlanAssignmentResponse
-        {
-            Id = a.Id,
-            MachineName = a.Machine?.Name ?? "N/A",
-            PlanTitle = a.MaintenancePlan?.Title ?? "N/A",
-            NextDueDate = a.NextDueDate,
-            LastPerformed = a.LastPerformed
-        });
+    [HttpGet]
+    public async Task<IActionResult> ObterTodas()
+    {
+        var atribuicoes = await _assignmentRepository.GetAllAsync();
+        var resposta = atribuicoes.Select(MapearAtribuicaoParaResposta);
 
-        return Ok(new
-        {
-            message = "Lista de atribuições carregada com sucesso.",
-            data = response
-        });
+        return Ok(new { mensagem = "Lista de atribuições carregada com sucesso.", dados = resposta });
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> ObterPorId(int id)
     {
-        var assignment = await _assignmentRepository.GetByIdAsync(id);
-        if (assignment == null)
-            return NotFound(new { message = $"Atribuição com ID {id} não foi encontrada." });
+        var userId = ObterIdUsuarioAtual();
+        var atribuicao = await _assignmentRepository.GetByIdAsync(id);
 
-        var response = new CreatePlanAssignmentResponse
-        {
-            Id = assignment.Id,
-            MachineName = assignment.Machine?.Name ?? "N/A",
-            PlanTitle = assignment.MaintenancePlan?.Title ?? "N/A",
-            NextDueDate = assignment.NextDueDate,
-            LastPerformed = assignment.LastPerformed
-        };
+        if (atribuicao == null || atribuicao.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Atribuição não encontrada ou acesso negado." });
 
-        return Ok(new
-        {
-            message = "Atribuição encontrada com sucesso.",
-            data = response
-        });
+        return Ok(new { mensagem = "Atribuição carregada com sucesso.", dados = MapearAtribuicaoParaResposta(atribuicao) });
     }
 
     [HttpGet("machine/{machineId}")]
-    public async Task<IActionResult> GetByMachine(int machineId)
+    public async Task<IActionResult> ObterPorMaquina(int machineId)
     {
-        var assignments = await _assignmentRepository.GetByMachineIdAsync(machineId);
+        var userId = ObterIdUsuarioAtual();
+        var atribuicoes = await _assignmentRepository.GetByMachineIdAsync(machineId);
 
-        var response = assignments.Select(a => new CreatePlanAssignmentResponse
-        {
-            Id = a.Id,
-            MachineName = a.Machine?.Name ?? "N/A",
-            PlanTitle = a.MaintenancePlan?.Title ?? "N/A",
-            NextDueDate = a.NextDueDate,
-            LastPerformed = a.LastPerformed
-        });
+        var resposta = atribuicoes
+            .Where(a => a.CreatedByUserId == userId)
+            .Select(MapearAtribuicaoParaResposta);
 
-        return Ok(new
-        {
-            message = $"Atribuições da máquina {machineId} carregadas com sucesso.",
-            data = response
-        });
+        return Ok(new { mensagem = $"Atribuições da máquina {machineId} carregadas com sucesso.", dados = resposta });
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreatePlanAssignmentRequest dto)
+    public async Task<IActionResult> Criar([FromBody] CreatePlanAssignmentRequest dto)
     {
+        var userId = ObterIdUsuarioAtual();
+        var maquina = await _machineRepository.GetByIdAsync(dto.MachineId);
+        var plano = await _planRepository.GetByIdAsync(dto.MaintenancePlanId);
 
-        var machine = await _machineRepository.GetByIdAsync(dto.MachineId);
-        var plan = await _planRepository.GetByIdAsync(dto.MaintenancePlanId);
+        if (maquina == null || plano == null)
+            return BadRequest(new { mensagem = "Máquina ou Plano de manutenção não encontrado." });
 
-        if (machine == null || plan == null)
-            return BadRequest("Machine or Maintenance Plan not found.");
-
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized(new { message = "Token inválido ou ID do usuário não encontrado." });
-        }
-
-        var assignment = new MaintenancePlanAssignment
+        var atribuicao = new MaintenancePlanAssignment
         {
             MachineId = dto.MachineId,
             MaintenancePlanId = dto.MaintenancePlanId,
@@ -115,78 +83,72 @@ public class PlanAssignmentController : ControllerBase
             CreatedByUserId = userId
         };
 
-        await _assignmentRepository.AddAsync(assignment);
+        await _assignmentRepository.AddAsync(atribuicao);
         await _assignmentRepository.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetById), new { id = assignment.Id }, new
-        {
-            message = "Plano atribuído com sucesso.",
-            data = new { assignment.Id }
-        });
+        return CreatedAtAction(nameof(ObterPorId), new { id = atribuicao.Id },
+        new { mensagem = "Plano atribuído com sucesso.", dados = new { atribuicao.Id } });
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreatePlanAssignmentRequest dto)
+    public async Task<IActionResult> Atualizar(int id, [FromBody] CreatePlanAssignmentRequest dto)
     {
-        var existing = await _assignmentRepository.GetByIdAsync(id);
-        if (existing == null)
-            return NotFound(new { message = $"Atribuição com ID {id} não foi encontrada." });
+        var userId = ObterIdUsuarioAtual();
+        var atribuicao = await _assignmentRepository.GetByIdAsync(id);
 
-        var machine = await _machineRepository.GetByIdAsync(dto.MachineId);
-        var plan = await _planRepository.GetByIdAsync(dto.MaintenancePlanId);
+        if (atribuicao == null || atribuicao.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Atribuição não encontrada ou acesso negado." });
 
-        if (machine == null || plan == null)
-            return BadRequest(new { message = "Máquina ou Plano de manutenção não encontrado." });
+        var maquina = await _machineRepository.GetByIdAsync(dto.MachineId);
+        var plano = await _planRepository.GetByIdAsync(dto.MaintenancePlanId);
 
-        existing.MachineId = dto.MachineId;
-        existing.MaintenancePlanId = dto.MaintenancePlanId;
-        existing.NextDueDate = dto.NextDueDate;
+        if (maquina == null || plano == null)
+            return BadRequest(new { mensagem = "Máquina ou Plano de manutenção não encontrado." });
 
-        _assignmentRepository.Update(existing);
+        atribuicao.MachineId = dto.MachineId;
+        atribuicao.MaintenancePlanId = dto.MaintenancePlanId;
+        atribuicao.NextDueDate = dto.NextDueDate;
+
+        _assignmentRepository.Update(atribuicao);
         await _assignmentRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Atribuição atualizada com sucesso." });
+        return Ok(new { mensagem = "Atribuição atualizada com sucesso." });
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Excluir(int id)
     {
-        var assignment = await _assignmentRepository.GetByIdAsync(id);
-        if (assignment == null)
-            return NotFound(new { message = $"Atribuição com ID {id} não foi encontrada." });
+        var userId = ObterIdUsuarioAtual();
+        var atribuicao = await _assignmentRepository.GetByIdAsync(id);
 
-        _assignmentRepository.Delete(assignment);
+        if (atribuicao == null || atribuicao.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Atribuição não encontrada ou acesso negado." });
+
+        _assignmentRepository.Delete(atribuicao);
         await _assignmentRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Atribuição deletada com sucesso." });
+        return Ok(new { mensagem = "Atribuição excluída com sucesso." });
     }
 
     [HttpGet("mine")]
-    public async Task<IActionResult> GetMyAssignments()
+    public async Task<IActionResult> ObterMinhasAtribuicoes()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ObterIdUsuarioAtual();
+        var atribuicoes = await _assignmentRepository.GetAssignmentsByCreatorAsync(userId);
+        var resposta = atribuicoes.Select(MapearAtribuicaoParaResposta);
 
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized(new { message = "Token inválido ou ID do usuário não encontrado." });
-        }
+        return Ok(new { mensagem = "Suas atribuições carregadas com sucesso.", dados = resposta });
+    }
 
-        var assignments = await _assignmentRepository.GetAssignmentsByCreatorAsync(userId);
-
-        var response = assignments.Select(a => new CreatePlanAssignmentResponse
+    private CreatePlanAssignmentResponse MapearAtribuicaoParaResposta(MaintenancePlanAssignment a)
+    {
+        return new CreatePlanAssignmentResponse
         {
             Id = a.Id,
             MachineName = a.Machine?.Name ?? "N/A",
             PlanTitle = a.MaintenancePlan?.Title ?? "N/A",
             NextDueDate = a.NextDueDate,
             LastPerformed = a.LastPerformed
-        });
-
-        return Ok(new
-        {
-            message = "Atribuições de planos criadas por você.",
-            data = response
-        });
+        };
     }
-
 }

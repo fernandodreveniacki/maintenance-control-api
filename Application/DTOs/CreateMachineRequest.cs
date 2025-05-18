@@ -15,7 +15,7 @@ public class CreateMachineRequest
     public DateTime InstallationDate { get; set; }
 
     [Required]
-    public MachineStatus Status { get; set; } = MachineStatus.Active;
+    public MachineStatus Status { get; set; }
 
     public string? Manufacturer { get; set; }
 }

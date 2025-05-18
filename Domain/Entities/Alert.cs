@@ -24,4 +24,9 @@ public class Alert
     [ForeignKey("CreatedByUser")]
     public int CreatedByUserId { get; set; }
     public User CreatedByUser { get; set; } = default!;
+
+    [ForeignKey("Machine")]
+    public int MachineId { get; set; } 
+
+    public Machine? Machine { get; set; }
 }

@@ -5,7 +5,6 @@ using MaintenanceControlSystem.Domain.Entities;
 using MaintenanceControlSystem.Infrastructure.Repositories.Interfaces;
 using MaintenanceControlSystem.Domain.Enums;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
 
 namespace MaintenanceControlSystem.API.Controllers;
 
@@ -21,22 +20,23 @@ public class MachineController : ControllerBase
         _machineRepository = machineRepository;
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateMachineRequest dto)
+    private int ObterIdUsuarioAtual()
     {
-        var existing = await _machineRepository.GetByCodeAsync(dto.Code);
-        if (existing != null)
+        return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Criar([FromBody] CreateMachineRequest dto)
+    {
+        var maquinaExistente = await _machineRepository.GetByCodeAsync(dto.Code);
+        if (maquinaExistente != null)
         {
-            return BadRequest(new { message = $"Já existe uma máquina com o código '{dto.Code}'." });
+            return BadRequest(new { mensagem = $"Já existe uma máquina com o código '{dto.Code}'." });
         }
 
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized(new { message = "Token inválido ou ID do usuário não encontrado." });
-        }
+        var userId = ObterIdUsuarioAtual();
 
-        var machine = new Machine
+        var maquina = new Machine
         {
             Name = dto.Name,
             Code = dto.Code,
@@ -44,139 +44,114 @@ public class MachineController : ControllerBase
             InstallationDate = dto.InstallationDate,
             Status = (MachineStatus)dto.Status,
             Manufacturer = dto.Manufacturer,
-            CreatedByUserId = userId 
+            CreatedByUserId = userId
         };
 
-        await _machineRepository.AddAsync(machine);
+        await _machineRepository.AddAsync(maquina);
         await _machineRepository.SaveChangesAsync();
 
-        var response = new CreateMachineResponse
-        {
-            Id = machine.Id,
-            Name = machine.Name,
-            Code = machine.Code,
-            Location = machine.Location,
-            InstallationDate = machine.InstallationDate,
-            Status = machine.Status.ToString(),
-            Manufacturer = machine.Manufacturer
-        };
+        var resposta = MapearMaquinaParaResposta(maquina);
 
-        return CreatedAtAction(nameof(GetById), new { id = machine.Id }, new
+        return CreatedAtAction(nameof(ObterPorId), new { id = maquina.Id }, new
         {
-            message = "Máquina criada com sucesso.",
-            data = response
+            mensagem = "Máquina criada com sucesso.",
+            dados = resposta
         });
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> ObterTodas()
     {
-        var machines = await _machineRepository.GetAllAsync();
-
-        var response = machines.Select(machine => new CreateMachineResponse
-        {
-            Id = machine.Id,
-            Name = machine.Name,
-            Code = machine.Code,
-            Location = machine.Location,
-            InstallationDate = machine.InstallationDate,
-            Status = machine.Status.ToString(),
-            Manufacturer = machine.Manufacturer
-        });
+        var maquinas = await _machineRepository.GetAllAsync();
+        var resposta = maquinas.Select(MapearMaquinaParaResposta);
 
         return Ok(new
         {
-            message = "Lista de máquinas carregada com sucesso.",
-            data = response
+            mensagem = "Lista de máquinas carregada com sucesso.",
+            dados = resposta
         });
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> ObterPorId(int id)
     {
-        var machine = await _machineRepository.GetByIdAsync(id);
-        if (machine == null)
+        var userId = ObterIdUsuarioAtual();
+        var maquina = await _machineRepository.GetByIdAsync(id);
+
+        if (maquina == null || maquina.CreatedByUserId != userId)
         {
-            return NotFound(new { message = $"Máquina com ID {id} não foi encontrada." });
+            return NotFound(new { mensagem = "Máquina não encontrada ou acesso negado." });
         }
 
-        var response = new CreateMachineResponse
-        {
-            Id = machine.Id,
-            Name = machine.Name,
-            Code = machine.Code,
-            Location = machine.Location,
-            InstallationDate = machine.InstallationDate,
-            Status = machine.Status.ToString(),
-            Manufacturer = machine.Manufacturer
-        };
-
-        return Ok(new
-        {
-            message = "Máquina encontrada com sucesso.",
-            data = response
-        });
+        var resposta = MapearMaquinaParaResposta(maquina);
+        return Ok(new { mensagem = "Máquina carregada com sucesso.", dados = resposta });
     }
 
     [HttpGet("mine")]
-    public async Task<IActionResult> GetMyMachines()
+    public async Task<IActionResult> ObterMinhasMaquinas()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ObterIdUsuarioAtual();
+        var maquinas = await _machineRepository.GetMachinesByCreatorAsync(userId);
 
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized(new { message = "Token inválido ou ID do usuário não encontrado." });
-        }
-        var machines = await _machineRepository.GetMachinesByCreatorAsync(userId);
-
-        var response = machines.Select(machine => new CreateMachineResponse
-        {
-            Id = machine.Id,
-            Name = machine.Name,
-            Code = machine.Code,
-            Location = machine.Location,
-            InstallationDate = machine.InstallationDate,
-            Status = machine.Status.ToString(),
-            Manufacturer = machine.Manufacturer
-        });
-
+        var resposta = maquinas.Select(MapearMaquinaParaResposta);
         return Ok(new
         {
-            message = "Máquinas criadas por você.",
-            data = response
+            mensagem = "Máquinas criadas por você carregadas com sucesso.",
+            dados = resposta
         });
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateMachineRequest dto)
+    public async Task<IActionResult> Atualizar(int id, [FromBody] CreateMachineRequest dto)
     {
-        var existing = await _machineRepository.GetByIdAsync(id);
-        if (existing == null)
-            return NotFound(new { message = $"Máquina com ID {id} não foi encontrada." });
+        var userId = ObterIdUsuarioAtual();
+        var maquina = await _machineRepository.GetByIdAsync(id);
 
-        existing.Name = dto.Name;
-        existing.Description = dto.Description;
-        existing.Status = dto.Status;
+        if (maquina == null || maquina.CreatedByUserId != userId)
+        {
+            return NotFound(new { mensagem = "Máquina não encontrada ou acesso negado." });
+        }
 
-        _machineRepository.Update(existing);
+        maquina.Name = dto.Name;
+        maquina.Location = dto.Location;
+        maquina.Status = (MachineStatus)dto.Status;
+        maquina.Manufacturer = dto.Manufacturer;
+        maquina.InstallationDate = dto.InstallationDate;
+
+        _machineRepository.Update(maquina);
         await _machineRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Máquina atualizada com sucesso." });
+        return Ok(new { mensagem = "Máquina atualizada com sucesso." });
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Excluir(int id)
     {
-        var machine = await _machineRepository.GetByIdAsync(id);
-        if (machine == null)
-            return NotFound(new { message = $"Máquina com ID {id} não foi encontrada." });
+        var userId = ObterIdUsuarioAtual();
+        var maquina = await _machineRepository.GetByIdAsync(id);
 
-        _machineRepository.Delete(machine);
+        if (maquina == null || maquina.CreatedByUserId != userId)
+        {
+            return NotFound(new { mensagem = "Máquina não encontrada ou acesso negado." });
+        }
+
+        _machineRepository.Delete(maquina);
         await _machineRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Máquina deletada com sucesso." });
+        return Ok(new { mensagem = "Máquina excluída com sucesso." });
     }
 
-
-
+    private CreateMachineResponse MapearMaquinaParaResposta(Machine maquina)
+    {
+        return new CreateMachineResponse
+        {
+            Id = maquina.Id,
+            Name = maquina.Name,
+            Code = maquina.Code,
+            Location = maquina.Location,
+            InstallationDate = maquina.InstallationDate,
+            Status = maquina.Status.ToString(),
+            Manufacturer = maquina.Manufacturer
+        };
+    }
 }

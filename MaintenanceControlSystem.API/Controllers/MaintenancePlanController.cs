@@ -20,77 +20,55 @@ public class MaintenancePlanController : ControllerBase
         _planRepository = planRepository;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    private int ObterIdUsuarioAtual()
     {
-        var plans = await _planRepository.GetAllAsync();
+        return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+    }
 
-        var response = plans.Select(plan => new CreateMaintenancePlanResponse
-        {
-            Id = plan.Id,
-            Title = plan.Title,
-            Description = plan.Description,
-            Frequency = $"{plan.FrequencyType} ({plan.FrequencyValue} dias)",
-            IsActive = plan.IsActive
-        });
+    [HttpGet]
+    public async Task<IActionResult> ObterTodos()
+    {
+        var planos = await _planRepository.GetAllAsync();
+        var resposta = planos.Select(MapearPlanoParaResposta);
 
         return Ok(new
         {
-            message = "Planos de manutenção carregados com sucesso.",
-            data = response
+            mensagem = "Planos de manutenção carregados com sucesso.",
+            dados = resposta
         });
     }
 
     [HttpGet("active")]
-    public async Task<IActionResult> GetActive()
+    public async Task<IActionResult> ObterAtivos()
     {
-        var plans = await _planRepository.GetActivePlansAsync();
-
-        var response = plans.Select(plan => new CreateMaintenancePlanResponse
-        {
-            Id = plan.Id,
-            Title = plan.Title,
-            Description = plan.Description,
-            Frequency = $"{plan.FrequencyType} ({plan.FrequencyValue} dias)",
-            IsActive = plan.IsActive
-        });
+        var planos = await _planRepository.GetActivePlansAsync();
+        var resposta = planos.Select(MapearPlanoParaResposta);
 
         return Ok(new
         {
-            message = "Planos de manutenção ativos carregados com sucesso.",
-            data = response
+            mensagem = "Planos de manutenção ativos carregados com sucesso.",
+            dados = resposta
         });
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> ObterPorId(int id)
     {
-        var plan = await _planRepository.GetByIdAsync(id);
-        if (plan == null)
-            return NotFound(new { message = $"Plano de manutenção com ID {id} não foi encontrado." });
+        var userId = ObterIdUsuarioAtual();
+        var plano = await _planRepository.GetByIdAsync(id);
 
-        var response = new CreateMaintenancePlanResponse
-        {
-            Id = plan.Id,
-            Title = plan.Title,
-            Description = plan.Description,
-            Frequency = $"{plan.FrequencyType} ({plan.FrequencyValue} dias)",
-            IsActive = plan.IsActive
-        };
+        if (plano == null || plano.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Plano de manutenção não encontrado ou acesso negado." });
 
-        return Ok(new
-        {
-            message = "Plano de manutenção encontrado com sucesso.",
-            data = response
-        });
+        return Ok(new { mensagem = "Plano de manutenção encontrado com sucesso.", dados = MapearPlanoParaResposta(plano) });
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateMaintenancePlanRequest dto)
+    public async Task<IActionResult> Criar([FromBody] CreateMaintenancePlanRequest dto)
     {
-        var userId = int.Parse(User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
+        var userId = ObterIdUsuarioAtual();
 
-        var plan = new MaintenancePlan
+        var plano = new MaintenancePlan
         {
             Title = dto.Title!,
             Description = dto.Description!,
@@ -100,74 +78,76 @@ public class MaintenancePlanController : ControllerBase
             CreatedByUserId = userId
         };
 
-        await _planRepository.AddAsync(plan);
+        await _planRepository.AddAsync(plano);
         await _planRepository.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetById), new { id = plan.Id }, new
+        return CreatedAtAction(nameof(ObterPorId), new { id = plano.Id },
+        new
         {
-            message = "Plano de manutenção criado com sucesso.",
-            data = new { plan.Id }
+            mensagem = "Plano de manutenção criado com sucesso.",
+            dados = new { plano.Id }
         });
     }
 
-
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateMaintenancePlanRequest dto)
+    public async Task<IActionResult> Atualizar(int id, [FromBody] CreateMaintenancePlanRequest dto)
     {
-        var existing = await _planRepository.GetByIdAsync(id);
-        if (existing == null)
-            return NotFound(new { message = $"Plano com ID {id} não foi encontrado." });
+        var userId = ObterIdUsuarioAtual();
+        var plano = await _planRepository.GetByIdAsync(id);
 
-        existing.Title = dto.Title;
-        existing.Description = dto.Description;
-        existing.FrequencyType = (FrequencyType)dto.FrequencyType;
-        existing.FrequencyValue = dto.FrequencyValue;
-        existing.IsActive = dto.IsActive;
+        if (plano == null || plano.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Plano de manutenção não encontrado ou acesso negado." });
 
-        _planRepository.Update(existing);
+        plano.Title = dto.Title;
+        plano.Description = dto.Description;
+        plano.FrequencyType = (FrequencyType)dto.FrequencyType;
+        plano.FrequencyValue = dto.FrequencyValue;
+        plano.IsActive = dto.IsActive;
+
+        _planRepository.Update(plano);
         await _planRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Plano de manutenção atualizado com sucesso." });
+        return Ok(new { mensagem = "Plano de manutenção atualizado com sucesso." });
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Excluir(int id)
     {
-        var plan = await _planRepository.GetByIdAsync(id);
-        if (plan == null)
-            return NotFound(new { message = $"Plano com ID {id} não foi encontrado." });
+        var userId = ObterIdUsuarioAtual();
+        var plano = await _planRepository.GetByIdAsync(id);
 
-        _planRepository.Delete(plan);
+        if (plano == null || plano.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Plano de manutenção não encontrado ou acesso negado." });
+
+        _planRepository.Delete(plano);
         await _planRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Plano de manutenção deletado com sucesso." });
+        return Ok(new { mensagem = "Plano de manutenção excluído com sucesso." });
     }
 
     [HttpGet("mine")]
-    public async Task<IActionResult> GetMyPlans()
+    public async Task<IActionResult> ObterMeusPlanos()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ObterIdUsuarioAtual();
+        var planos = await _planRepository.GetPlansByCreatorAsync(userId);
 
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized(new { message = "Token inválido ou ID do usuário não encontrado." });
-        }
-        var plans = await _planRepository.GetPlansByCreatorAsync(userId);
-
-        var response = plans.Select(plan => new CreateMaintenancePlanResponse
-        {
-            Id = plan.Id,
-            Title = plan.Title,
-            Description = plan.Description,
-            Frequency = $"{plan.FrequencyType} ({plan.FrequencyValue} dias)",
-            IsActive = plan.IsActive
-        });
-
+        var resposta = planos.Select(MapearPlanoParaResposta);
         return Ok(new
         {
-            message = "Planos de manutenção criados por você.",
-            data = response
+            mensagem = "Seus planos de manutenção carregados com sucesso.",
+            dados = resposta
         });
     }
 
+    private CreateMaintenancePlanResponse MapearPlanoParaResposta(MaintenancePlan plano)
+    {
+        return new CreateMaintenancePlanResponse
+        {
+            Id = plano.Id,
+            Title = plano.Title,
+            Description = plano.Description,
+            Frequency = $"{plano.FrequencyType} ({plano.FrequencyValue} dias)",
+            IsActive = plano.IsActive
+        };
+    }
 }

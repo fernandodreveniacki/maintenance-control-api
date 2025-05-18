@@ -1,4 +1,5 @@
 namespace MaintenanceControlSystem.Application.DTOs;
+using MaintenanceControlSystem.Domain.Enums;
 
 public class CreateMaintenanceResponse
 {

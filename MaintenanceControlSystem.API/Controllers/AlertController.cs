@@ -4,7 +4,6 @@ using MaintenanceControlSystem.Application.DTOs;
 using MaintenanceControlSystem.Infrastructure.Repositories.Interfaces;
 using MaintenanceControlSystem.Domain.Entities;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
 
 namespace MaintenanceControlSystem.API.Controllers;
 
@@ -15,214 +14,162 @@ public class AlertController : ControllerBase
 {
     private readonly IAlertRepository _alertRepository;
     private readonly IMaintenancePlanAssignmentRepository _assignmentRepository;
+
     public AlertController(IAlertRepository alertRepository, IMaintenancePlanAssignmentRepository assignmentRepository)
     {
         _alertRepository = alertRepository;
         _assignmentRepository = assignmentRepository;
     }
 
-    [HttpPost]
-    [Authorize]
-    public async Task<IActionResult> CreateAlert([FromBody] CreateAlertRequest dto)
+    private int ObterIdUsuarioAtual()
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    }
 
-        var assignments = await _assignmentRepository.GetByMachineIdAsync(dto.MachineId);
-        var assignment = assignments.FirstOrDefault();
+    [HttpPost]
+    public async Task<IActionResult> CriarAlerta([FromBody] CreateAlertRequest dto)
+    {
+        var userId = ObterIdUsuarioAtual();
+        var planos = await _assignmentRepository.GetByMachineIdAsync(dto.MachineId);
+        var plano = planos.FirstOrDefault();
 
-        if (assignment == null)
+        if (plano == null)
         {
-            return BadRequest(new { message = $"Nenhum plano de manutenção encontrado para a máquina {dto.MachineId}." });
+            return BadRequest(new { mensagem = $"Nenhum plano de manutenção encontrado para a máquina {dto.MachineId}." });
         }
 
-        var alert = new Alert
+        var alerta = new Alert
         {
             Message = dto.Message,
             IsRead = false,
             MachineId = dto.MachineId,
-            AssignmentId = assignment.Id,
+            AssignmentId = plano.Id,
             CreatedAt = DateTime.UtcNow,
             CreatedByUserId = userId
         };
 
-        await _alertRepository.AddAsync(alert);
+        await _alertRepository.AddAsync(alerta);
         await _alertRepository.SaveChangesAsync();
 
-        var response = new CreateAlertResponse
-        {
-            Id = alert.Id,
-            Message = alert.Message,
-            MachineId = alert.MachineId,
-            IsRead = alert.IsRead,
-            CreatedAt = alert.CreatedAt
-        };
-
-        return CreatedAtAction(nameof(GetById), new { id = alert.Id }, new
-        {
-            message = "Alerta criado com sucesso.",
-            data = response
-        });
+        var resposta = MapearAlertaParaResposta(alerta);
+        return CreatedAtAction(nameof(ObterPorId), new { id = alerta.Id }, new { mensagem = "Alerta criado com sucesso.", dados = resposta });
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> ObterPorId(int id)
     {
-        var alert = await _alertRepository.GetByIdAsync(id);
-        if (alert == null)
-            return NotFound(new { message = $"Alerta com ID {id} não foi encontrado." });
+        var userId = ObterIdUsuarioAtual();
+        var alerta = await _alertRepository.GetByIdAsync(id);
 
-        var response = new CreateAlertResponse
-        {
-            Id = alert.Id,
-            Message = alert.Message,
-            MachineId = alert.MachineId,
-            IsRead = alert.IsRead,
-            CreatedAt = alert.CreatedAt
-        };
+        if (alerta == null || alerta.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Alerta não encontrado ou acesso negado." });
 
-        return Ok(new
-        {
-            message = "Alerta carregado com sucesso.",
-            data = response
-        });
+        return Ok(new { mensagem = "Alerta carregado com sucesso.", dados = MapearAlertaParaResposta(alerta) });
     }
 
     [HttpGet("machine/{machineId}")]
-    public async Task<IActionResult> GetByMachine(int machineId)
+    public async Task<IActionResult> ObterPorMaquina(int machineId)
     {
-        var alerts = await _alertRepository.GetByMachineAsync(machineId);
+        var userId = ObterIdUsuarioAtual();
+        var alertas = await _alertRepository.GetByMachineAsync(machineId);
 
-        var response = alerts.Select(a => new CreateAlertResponse
-        {
-            Id = a.Id,
-            Message = a.Message,
-            MachineId = a.MachineId,
-            IsRead = a.IsRead,
-            CreatedAt = a.CreatedAt
-        });
+        var resposta = alertas
+            .Where(a => a.CreatedByUserId == userId)
+            .Select(MapearAlertaParaResposta);
 
-        return Ok(new
-        {
-            message = $"Alertas da máquina {machineId} carregados com sucesso.",
-            data = response
-        });
+        return Ok(new { mensagem = $"Alertas da máquina {machineId} carregados com sucesso.", dados = resposta });
     }
-
 
     [HttpGet("unread")]
-    public async Task<IActionResult> GetUnread()
+    public async Task<IActionResult> ObterNaoLidos()
     {
-        var alerts = await _alertRepository.GetUnreadAsync();
+        var userId = ObterIdUsuarioAtual();
+        var alertas = await _alertRepository.GetUnreadAsync();
+        var resposta = alertas
+            .Where(a => a.CreatedByUserId == userId)
+            .Select(MapearAlertaParaResposta);
 
-        var response = alerts.Select(a => new CreateAlertResponse
-        {
-            Id = a.Id,
-            Message = a.Message,
-            IsRead = a.IsRead,
-            MachineId = a.MachineId,
-            CreatedAt = a.CreatedAt
-        });
-
-        return Ok(new
-        {
-            message = "Alertas não lidos carregados com sucesso.",
-            data = response
-        });
+        return Ok(new { mensagem = "Alertas não lidos carregados com sucesso.", dados = resposta });
     }
-
 
     [HttpPut("{id}/read")]
-    public async Task<IActionResult> MarkAsRead(int id)
+    public async Task<IActionResult> MarcarComoLido(int id)
     {
-        var alert = await _alertRepository.GetByIdAsync(id);
-        if (alert == null)
-            return NotFound(new { message = $"Alerta com ID {id} não foi encontrado." });
+        var userId = ObterIdUsuarioAtual();
+        var alerta = await _alertRepository.GetByIdAsync(id);
 
-        alert.IsRead = true;
-        _alertRepository.Update(alert);
+        if (alerta == null || alerta.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Alerta não encontrado ou acesso negado." });
+
+        alerta.IsRead = true;
+        _alertRepository.Update(alerta);
         await _alertRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Alerta marcado como lido com sucesso." });
+        return Ok(new { mensagem = "Alerta marcado como lido com sucesso." });
     }
+
     [HttpGet("mine")]
-    public async Task<IActionResult> GetMyAlerts()
+    public async Task<IActionResult> ObterMeusAlertas()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ObterIdUsuarioAtual();
+        var alertas = await _alertRepository.GetAlertsByCreatorAsync(userId);
+        var resposta = alertas.Select(MapearAlertaParaResposta);
 
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized(new { message = "Token inválido ou ID do usuário não encontrado." });
-        }
-        var alerts = await _alertRepository.GetAlertsByCreatorAsync(userId);
-
-        var response = alerts.Select(a => new CreateAlertResponse
-        {
-            Id = a.Id,
-            Message = a.Message,
-            IsRead = a.IsRead,
-            MachineId = a.Assignment?.MachineId ?? 0,
-            CreatedAt = a.CreatedAt
-        });
-
-        return Ok(new
-        {
-            message = "Alertas gerados para planos criados por você.",
-            data = response
-        });
+        return Ok(new { mensagem = "Seus alertas carregados com sucesso.", dados = resposta });
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> ObterTodos()
     {
-        var alerts = await _alertRepository.GetAllAsync();
+        var alertas = await _alertRepository.GetAllAsync();
+        var resposta = alertas.Select(MapearAlertaParaResposta);
 
-        var response = alerts.Select(a => new CreateAlertResponse
-        {
-            Id = a.Id,
-            Message = a.Message,
-            IsRead = a.IsRead,
-            MachineId = a.MachineId,
-            CreatedAt = a.CreatedAt
-        });
-
-        return Ok(new
-        {
-            message = "Alertas carregados com sucesso.",
-            data = response
-        });
+        return Ok(new { mensagem = "Todos os alertas carregados com sucesso.", dados = resposta });
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateAlertRequest dto)
+    public async Task<IActionResult> Atualizar(int id, [FromBody] CreateAlertRequest dto)
     {
-        var existing = await _alertRepository.GetByIdAsync(id);
-        if (existing == null)
-            return NotFound(new { message = $"Alerta com ID {id} não foi encontrado." });
+        var userId = ObterIdUsuarioAtual();
+        var alerta = await _alertRepository.GetByIdAsync(id);
 
-        existing.Title = dto.Title;
-        existing.Message = dto.Message;
-        existing.MachineId = dto.MachineId;
-        existing.IsRead = dto.IsRead;
+        if (alerta == null || alerta.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Alerta não encontrado ou acesso negado." });
 
-        _alertRepository.Update(existing);
+        alerta.Message = dto.Message;
+        alerta.MachineId = dto.MachineId;
+        alerta.IsRead = dto.IsRead;
+
+        _alertRepository.Update(alerta);
         await _alertRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Alerta atualizado com sucesso." });
+        return Ok(new { mensagem = "Alerta atualizado com sucesso." });
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Excluir(int id)
     {
-        var alert = await _alertRepository.GetByIdAsync(id);
-        if (alert == null)
-            return NotFound(new { message = $"Alerta com ID {id} não foi encontrado." });
+        var userId = ObterIdUsuarioAtual();
+        var alerta = await _alertRepository.GetByIdAsync(id);
 
-        _alertRepository.Delete(alert);
+        if (alerta == null || alerta.CreatedByUserId != userId)
+            return NotFound(new { mensagem = "Alerta não encontrado ou acesso negado." });
+
+        _alertRepository.Delete(alerta);
         await _alertRepository.SaveChangesAsync();
 
-        return Ok(new { message = "Alerta deletado com sucesso." });
+        return Ok(new { mensagem = "Alerta excluído com sucesso." });
     }
 
-
-
+    private CreateAlertResponse MapearAlertaParaResposta(Alert alerta)
+    {
+        return new CreateAlertResponse
+        {
+            Id = alerta.Id,
+            Message = alerta.Message,
+            IsRead = alerta.IsRead,
+            MachineId = alerta.MachineId,
+            CreatedAt = alerta.CreatedAt
+        };
+    }
 }

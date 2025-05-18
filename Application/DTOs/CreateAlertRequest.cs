@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using MaintenanceControlSystem.Domain.Enums;
 
 namespace MaintenanceControlSystem.Application.DTOs;
 
@@ -12,4 +13,6 @@ public class CreateAlertRequest
 
     [Required]
     public int MachineId { get; set; }
+    public bool IsRead { get; set; } = false;
+
 }

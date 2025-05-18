@@ -1,3 +1,5 @@
+using MaintenanceControlSystem.Domain.Enums;
+
 namespace MaintenanceControlSystem.Application.DTOs;
 
 public class CreateAlertResponse
