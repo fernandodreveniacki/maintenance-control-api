@@ -1,33 +1,33 @@
 # Sistema de Controle de Manutenção Industrial (API)
 
-## 📌 Descrição
+## Descrição
 
 Esta é uma API para gerenciamento de manutenção industrial, permitindo criar, listar, atualizar e deletar máquinas, alertas, planos de manutenção e usuários.
 
 ---
 
-## 🚀 Funcionalidades
+## Funcionalidades
 
-* ✅ Login e Autenticação com JWT.
-* ✅ Gerenciamento de Máquinas (CRUD).
-* ✅ Gerenciamento de Alertas (CRUD).
-* ✅ Gerenciamento de Manutenções (CRUD).
-* ✅ Gerenciamento de Planos de Manutenção (CRUD).
-* ✅ Controle de Atribuições de Planos (CRUD).
-* ✅ Gerenciamento de Usuários (CRUD).
-* ✅ Testes Automatizados com Postman.
+*  Login e Autenticação com JWT.
+*  Gerenciamento de Máquinas (CRUD).
+*  Gerenciamento de Alertas (CRUD).
+*  Gerenciamento de Manutenções (CRUD).
+*  Gerenciamento de Planos de Manutenção (CRUD).
+*  Controle de Atribuições de Planos (CRUD).
+*  Gerenciamento de Usuários (CRUD).
+*  Testes Automatizados com Postman.
 
 ---
 
-## 🚀 Como Usar a API
+## Como Usar a API
 
-### ✅ Requisitos:
+### Requisitos:
 
 * .NET SDK (8.0 ou superior).
 * SQL Server (para o banco de dados).
 * Postman (para testes).
 
-### ✅ Como Rodar a API:
+### Como Rodar a API:
 
 1. Clone o repositório:
 
@@ -55,11 +55,11 @@ Esta é uma API para gerenciamento de manutenção industrial, permitindo criar,
 
 ---
 
-## ✅ Configuração Inicial do Banco de Dados
+## Configuração Inicial do Banco de Dados
 
 Para que o sistema funcione corretamente, é necessário criar o primeiro usuário administrador diretamente no banco de dados e popular o banco com alguns dados de teste.
 
-### ✅ Executando o Script de Configuração Inicial
+### Executando o Script de Configuração Inicial
 
 1. Acesse o seu **SQL Server Management Studio (SSMS)** ou outro cliente SQL de sua preferência.
 
@@ -69,7 +69,7 @@ Para que o sistema funcione corretamente, é necessário criar o primeiro usuár
 
 ---
 
-## ? Testes com Postman
+## Testes com Postman
 
 * Vá na pasta `Postman/`.
 * Importe a coleção `SistemaControleManutencao.postman_collection.json` no Postman.
@@ -78,16 +78,16 @@ Para que o sistema funcione corretamente, é necessário criar o primeiro usuár
 
 ---
 
-## ? Solucionando Erros Comuns
+## Solucionando Erros Comuns
 
-* ?? **"404 Not Found"** ? O ID especificado não existe.
-* ?? **"400 Bad Request"** ? Os dados enviados estão incorretos ou incompletos.
-* ?? **"401 Unauthorized"** ? O Token JWT não foi gerado corretamente ou expirou.
-* ?? **"409 Conflict"** ? Tentativa de criar um recurso (máquina, usuário) com dados já existentes.
+*  **"404 Not Found"**  O ID especificado não existe.
+*  **"400 Bad Request"**  Os dados enviados estão incorretos ou incompletos.
+*  **"401 Unauthorized"**  O Token JWT não foi gerado corretamente ou expirou.
+*  **"409 Conflict"**  Tentativa de criar um recurso (máquina, usuário) com dados já existentes.
 
 ---
 
-## ✅ Observações
+## Observações
 
 * Garanta que o Token JWT é gerado corretamente após o Login.
 * Verifique se os IDs dos recursos (máquinas, alertas, manutenções) existem antes de atualizar ou deletar.
